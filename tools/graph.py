@@ -62,3 +62,5 @@ if __name__ == '__main__':
     graphInfo = list(G.edges(data=True))
     for info in graphInfo:
         print(info[0], info[1], info[2]['weight'])
+
+    print(nx.shortest_path_length(G, srcNode, dstNode, weight='weight'), file=sys.stderr)
