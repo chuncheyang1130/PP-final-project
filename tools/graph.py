@@ -49,7 +49,8 @@ if __name__ == '__main__':
             print("Is not Directed Acyclic Graph")
 
     else:
-        print('Unsupported Algorithm')
+        print('Unsupported Algorithm', file=sys.stderr)
+        sys.exit()
 
     srcNode = random.randint(0, args.n-1)
     dstNode = random.randint(0, args.n-1)
@@ -63,4 +64,7 @@ if __name__ == '__main__':
     for info in graphInfo:
         print(info[0], info[1], info[2]['weight'])
 
-    print(nx.shortest_path_length(G, srcNode, dstNode, weight='weight'), file=sys.stderr)
+    if args.algo == 'Dijkstra':
+        print(nx.shortest_path_length(G, srcNode, dstNode, weight='weight', method='dijkstra'), file=sys.stderr)
+    elif args.algo == 'BellmanFord':
+        print(nx.shortest_path_length(G, srcNode, dstNode, weight='weight', method='bellman-ford'), file=sys.stderr)
