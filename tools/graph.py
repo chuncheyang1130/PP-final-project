@@ -36,7 +36,7 @@ if __name__ == '__main__':
         edge = 0
         while(edge < args.e):
             source = random.randint(0, args.n-1)
-            target = random.randint(source+1, args.n-1)
+            target = random.randint(0, args.n-1)
             weight = random.randint(-10, 10)
 
             if not G.has_edge(source, target):

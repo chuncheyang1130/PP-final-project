@@ -3,10 +3,13 @@ CFLAGS = -O2 -std=c++17
 
 .PHONY: all run clean
 
-all: dijkstra 
+all: dijkstra bellmanford
 
 dijkstra: dijkstra_serial.cc
 	$(CXX) $(CFLAGS) $< -o $@ 
+
+bellmanford: BellmanFord_serial.cc
+	$(CXX) $(CFLAGS) $< -o $@
 
 clean: 
 	rm dijkstra
