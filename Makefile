@@ -1,7 +1,7 @@
 CXX = g++
 CFLAGS = -O2 -std=c++17 -g -Wall
 
-.PHONY: all run clean
+.PHONY: all clean
 
 all: dijkstra_serial dijkstra_thread
 
