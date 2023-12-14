@@ -66,11 +66,11 @@ int main(int argc, char *argv[]) {
         Edge e1 = {source, target, weight};
         edges.push_back(e1);
 
-        Edge e2 = {source, target, weight};
+        Edge e2 = {target, source, weight};
         edges.push_back(e2);
     }
 
-    std::printf("Successfully construct adjacency matrix\n");
+    std::printf("Successfully construct Edge vector\n");
     ifs.close();
 
     int minDist = BellmanFord(edges, srcNode, dstNode, numNodes);

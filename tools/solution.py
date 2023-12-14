@@ -24,4 +24,5 @@ if __name__ == "__main__":
     srcNode = args.s
     dstNode = args.d
 
-    print("Groud Truth:", nx.shortest_path_length(G, srcNode, dstNode, weight='weight', method='dijkstra'), file=sys.stderr)
+    # print(nx.shortest_path(G, srcNode, dstNode, weight='weight', method='bellman-ford'), file=sys.stderr)
+    print("Groud Truth:", nx.shortest_path_length(G, srcNode, dstNode, weight='weight', method='bellman-ford'), file=sys.stderr)
