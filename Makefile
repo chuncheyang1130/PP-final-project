@@ -1,15 +1,21 @@
 CXX = g++
-CFLAGS = -O2 -std=c++17
+CFLAGS = -O2 -std=c++17 -g -Wall
 
 .PHONY: all run clean
 
-all: dijkstra 
+all: dijkstra_serial dijkstra_thread
 
-dijkstra: dijkstra_serial.cc
+dijkstra_serial: dijkstra_serial.cc
 	$(CXX) $(CFLAGS) $< -o $@ 
 
+dijkstra_thread: dijkstra_thread.cc
+	$(CXX) $(CFLAGS) $< -o $@ -fopenmp
+
 clean: 
-	rm dijkstra
+	rm dijkstra_serial dijkstra_thread
 	
-run: 
-	./dijkstra ./tools/output2.txt 10000 50000
+run_serial: 
+	./dijkstra_serial ./tools/output2.txt 10000 50000
+
+run_thread:
+	./dijkstra_thread ./tools/output2.txt 10000 50000
