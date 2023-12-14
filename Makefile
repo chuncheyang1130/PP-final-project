@@ -13,6 +13,10 @@ bellmanford: BellmanFord_serial.cc
 
 clean: 
 	rm dijkstra
+	rm bellmanford
 	
-run: 
-	./dijkstra ./tools/output.txt 100 500
+run_dijkstra: 
+	./dijkstra ./output.txt 100 500
+
+run_bellmanford:
+	./bellmanford ./output.txt 100 500

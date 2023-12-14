@@ -3,7 +3,7 @@
 ### How to use random graph generator in tools/graph.py
 
 ```
-python3 graph.py --algo [Dijkstra | BellmanFord] -n NodeNum -e EdgeNum -d Distance > output.txt 
+python3 ./tools/graph.py --algo [Dijkstra | BellmanFord] -n NodeNum -e EdgeNum -d Distance > output.txt 
 ```
 The output format is like `src dst weight`
 

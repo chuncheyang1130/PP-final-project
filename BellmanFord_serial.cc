@@ -39,14 +39,10 @@ int BellmanFord(std::vector<Edge>& edges, int srcNode, int dstNode, int numNodes
 
 int main(int argc, char *argv[]) {
     if (argc < 4) {
-        std::printf("usage: ./BellmanFord file.txt node_num edge_num");
+        std::printf("usage: ./BellmanFord file.txt srcNode dstNode");
         return 1;
     }
 
-    unsigned int numNodes = std::atoi(argv[2]);
-    unsigned int numEdges = std::atoi(argv[3]);
-    std::printf("[Nodes]: %u [Edges]: %u\n", numNodes, numEdges);
-    
     std::vector<Edge> edges;
     
     std::ifstream ifs;
@@ -56,15 +52,22 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    int srcNode, dstNode;
-    ifs >> srcNode >> dstNode;
-    std::printf("[srcNode]: %d [dstNode]: %d\n", srcNode, dstNode);
+    int numNodes, numEdges;
+    ifs >> numNodes >> numEdges;
+    std::printf("[numNode]: %d [numEdges]: %d\n", numNodes, numEdges);
+
+    int srcNode = std::atoi(argv[2]);
+    int dstNode = std::atoi(argv[3]);
+    std::printf("[srcNode]: %u [Edges]: %u\n", srcNode, dstNode);
 
     int source, target, weight;
     for (unsigned int i = 0; i < numEdges; i++) {
         ifs >> source >> target >> weight;
-        Edge e = {source, target, weight};
-        edges.push_back(e);
+        Edge e1 = {source, target, weight};
+        edges.push_back(e1);
+
+        Edge e2 = {source, target, weight};
+        edges.push_back(e2);
     }
 
     std::printf("Successfully construct adjacency matrix\n");
