@@ -1,22 +1,24 @@
 CXX = g++
-CFLAGS = -O2 -std=c++17
+CFLAGS = -O2 -std=c++17 -g -Wall
 
-.PHONY: all run clean
+.PHONY: all clean
 
-all: dijkstra bellmanford
+all: dijkstra_serial dijkstra_thread bellmanford_serial
 
-dijkstra: dijkstra_serial.cc
+dijkstra_serial: dijkstra_serial.cc
 	$(CXX) $(CFLAGS) $< -o $@ 
 
-bellmanford: BellmanFord_serial.cc
+dijkstra_thread: dijkstra_thread.cc
+	$(CXX) $(CFLAGS) $< -o $@ -fopenmp
+
+bellmanford_serial: bellmanford_serial.cc
 	$(CXX) $(CFLAGS) $< -o $@
 
 clean: 
-	rm dijkstra
-	rm bellmanford
+	rm dijkstra_serial dijkstra_thread bellmanford_serial
 	
-run_dijkstra: 
-	./dijkstra ./output.txt 100 500
+run_serial: 
+	./dijkstra_serial ./tools/output2.txt 10000 50000
 
-run_bellmanford:
-	./bellmanford ./output.txt 100 500
+run_thread:
+	./dijkstra_thread ./tools/output2.txt 10000 50000

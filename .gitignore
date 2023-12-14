@@ -2,3 +2,4 @@
 bellmanford
 dijkstra
 *.pkl
+.vscode

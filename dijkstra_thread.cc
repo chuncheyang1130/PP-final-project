@@ -3,16 +3,34 @@
 #include <climits>
 #include <fstream>
 #include <iostream>
+#include "omp.h"
 #include "CycleTimer.h"
 
 int minimumDistance(std::vector<int> dist, std::vector<bool> visited) {
     int min = INT_MAX, min_index = 0;
-    for (std::size_t v = 0; v < dist.size(); v++) {
-        if (!visited[v] && dist[v] <= min) {
-            min = dist[v];
-            min_index = v;
+    #pragma omp parallel 
+    {
+        int min_thread = min;
+        int min_index_thread = min_index;
+        #pragma omp barrier
+
+        #pragma omp for nowait
+        for (std::size_t v = 0; v < dist.size(); v++) {
+            if (!visited[v] && dist[v] < min_thread) {
+                min_thread = dist[v];
+                min_index_thread = v;
+            }
+        }
+
+        #pragma omp critical
+        {
+            if (min_thread < min) {
+                min = min_thread;
+                min_index = min_index_thread;
+            }
         }
     }
+
     return min_index;
 }
 
@@ -20,20 +38,28 @@ int dijkstra(std::vector<std::vector<int>> adjMatrix, int srcNode, int dstNode, 
     std::vector<int> dist(numNodes);
     std::vector<bool> visited(numNodes);
 
+    #pragma omp parallel for 
     for (unsigned int i = 0; i < numNodes; i++) {
         dist[i] = INT_MAX;
         visited[i] = false;
     }
+
     dist[srcNode] = 0;
+
     for (unsigned int i = 0; i < numNodes-1; i++) {
         
         int u = minimumDistance(dist, visited);
         visited[u] = true;
-        
-        for (unsigned int v = 0; v < numNodes; v++) {
-            if (!visited[v] && adjMatrix[u][v] && dist[u] + adjMatrix[u][v] < dist[v])
-                dist[v] = dist[u] + adjMatrix[u][v];
+
+        #pragma omp parallel 
+        {
+            #pragma omp for 
+            for (unsigned int v = 0; v < numNodes; v++) {
+                if (!visited[v] && adjMatrix[u][v] && dist[u] + adjMatrix[u][v] < dist[v])
+                    dist[v] = dist[u] + adjMatrix[u][v];;
+            }
         }
+        
     }
     return dist[dstNode];
 }
@@ -65,13 +91,13 @@ int main(int argc, char *argv[]) {
     }
     std::printf("Successfully construct adjacency matrix\n");
     ifs.close();
-    
+
     double startTime = CycleTimer::currentSeconds();
     int minDist = dijkstra(adjMatrix, srcNode, dstNode, numNodes);
     double endTime = CycleTimer::currentSeconds();
 
-    std::printf("[Dijkstra Serial]:\t\t[%lf] ms\n", (endTime - startTime) * 1000);
+    std::printf("[Dijkstra Thread]:\t\t[%lf] ms\n", (endTime - startTime) * 1000);
     std::printf("The minimum distance from %d to %d is: %d\n", srcNode, dstNode, minDist);
-    
+
     return 0;
 }
