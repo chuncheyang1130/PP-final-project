@@ -4,6 +4,7 @@
 
 ```
 python3 ./tools/graph.py --algo [Dijkstra | BellmanFord] -n NodeNum -e EdgeNum -d Distance > output.txt 
+python3 ./tools/general_graph.py -n NodeNum -e EdgeNum > output.txt
 ```
 The output format is like `src dst weight`
 
