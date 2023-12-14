@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
     int minDist = dijkstra(adjMatrix, srcNode, dstNode, numNodes);
     double endTime = CycleTimer::currentSeconds();
 
-    std::printf("[Dijkstra Serial]:\t\t[%lf] ms\n", endTime - startTime);
+    std::printf("[Dijkstra Serial]:\t\t[%lf] ms\n", endTime - startTime * 1000);
     std::printf("The minimum distance from %d to %d is: %d\n", srcNode, dstNode, minDist);
     
     return 0;
