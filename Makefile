@@ -12,4 +12,4 @@ clean:
 	rm dijkstra
 	
 run: 
-	./dijkstra ./tools/output.txt 100 500
+	./dijkstra ./tools/output2.txt 10000 50000

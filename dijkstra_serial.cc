@@ -1,10 +1,9 @@
-
 #include <vector>
 #include <string>
 #include <climits>
 #include <fstream>
 #include <iostream>
-#include <algorithm>
+#include "CycleTimer.h"
 
 int minimumDistance(std::vector<int> dist, std::vector<bool> visited) {
     int min = INT_MAX, min_index;
@@ -66,8 +65,12 @@ int main(int argc, char *argv[]) {
     }
     std::printf("Successfully construct adjacency matrix\n");
     ifs.close();
-
+    
+    double startTime = CycleTimer::currentSeconds();
     int minDist = dijkstra(adjMatrix, srcNode, dstNode, numNodes);
+    double endTime = CycleTimer::currentSeconds();
+
+    std::printf("[Dijkstra Serial]:\t\t[%lf] ms\n", endTime - startTime);
     std::printf("The minimum distance from %d to %d is: %d\n", srcNode, dstNode, minDist);
     
     return 0;
