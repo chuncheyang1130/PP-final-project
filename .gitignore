@@ -3,6 +3,7 @@ bellmanford_serial
 bellmanford_thread
 dijkstra_serial
 dijkstra_thread
+dijkstra_cuda
 
 *.pkl
 .vscode

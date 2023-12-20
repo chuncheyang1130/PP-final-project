@@ -6,18 +6,6 @@
 #include "CycleTimer.h"
 
 
-// __global__ void minimumDistance(int *deviceDist, bool *deviceVisited, int *deviceMinIndex, int numNodes) {
-//     int min = INT_MAX, min_index = 0;
-//     for (int v = 0; v < numNodes; v++) {
-//         if (!deviceVisited[v] && deviceDist[v] <= min) {
-//             min = deviceDist[v];
-//             min_index = v;
-//         }
-//     }
-//     deviceMinIndex[0] = min_index;
-//     deviceVisited[min_index] = true;
-// }
-
 int minimumDistance(int *dist, bool *visited, int numNodes) {
     int min = INT_MAX, min_index = 0;
     for (int v = 0; v < numNodes; v++) {
@@ -93,8 +81,7 @@ int main(int argc, char *argv[]) {
     cudaMalloc((void **)&deviceVisited, numNodes * sizeof(bool));
     cudaMemcpy(deviceDist, dist, numNodes * sizeof(int), cudaMemcpyHostToDevice);
     cudaMemcpy(deviceVisited, visited, numNodes * sizeof(int), cudaMemcpyHostToDevice);
-    // dim3 threadsPerBlockMin(1, 1);
-    // dim3 numBlockMin(1, 1);
+
     dim3 threadsPerBlockRelax(16, 1);
     dim3 numBlockRelax(numNodes / threadsPerBlockRelax.x, 1);
 
