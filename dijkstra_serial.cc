@@ -4,7 +4,6 @@
 #include <fstream>
 #include <iostream>
 #include "CycleTimer.h"
-
 int minimumDistance(std::vector<int> dist, std::vector<bool> visited) {
     int min = INT_MAX, min_index = 0;
     for (std::size_t v = 0; v < dist.size(); v++) {
