@@ -25,6 +25,11 @@ int BellmanFord(std::vector<Edge>& edges, int srcNode, int dstNode, int numNodes
             if (dist[edge.src] != INF)
                 dist[edge.dst] = std::min(dist[edge.src] + edge.weight, dist[edge.dst]);
         }
+
+        // for(int i = 0; i < numNodes; i++){
+        //     std::printf("dist[%d] = %d\n", i, dist[i]);
+        // }
+        // std::printf("\n");
     }
 
     for (const auto& edge : edges){
@@ -40,7 +45,7 @@ int BellmanFord(std::vector<Edge>& edges, int srcNode, int dstNode, int numNodes
 
 int main(int argc, char *argv[]) {
     if (argc < 4) {
-        std::printf("usage: ./BellmanFord file.txt srcNode dstNode");
+        std::printf("usage: ./bellmanford_serial file.txt srcNode dstNode\n");
         return 1;
     }
 
@@ -69,6 +74,7 @@ int main(int argc, char *argv[]) {
     int source, target, weight;
     for (int i = 0; i < numEdges; i++) {
         ifs >> source >> target >> weight;
+
         Edge e1 = {source, target, weight};
         edges.push_back(e1);
 
