@@ -3,7 +3,11 @@ CFLAGS = -O2 -std=c++17 -g -Wall
 
 .PHONY: all clean
 
-all: dijkstra_serial dijkstra_thread bellmanford_serial
+all: dijkstra bellmanford
+
+bellmanford: bellmanford_serial bellmanford_thread
+
+dijkstra: dijkstra_serial dijkstra_thread
 
 dijkstra_serial: dijkstra_serial.cc
 	$(CXX) $(CFLAGS) $< -o $@ 
@@ -14,8 +18,16 @@ dijkstra_thread: dijkstra_thread.cc
 bellmanford_serial: bellmanford_serial.cc
 	$(CXX) $(CFLAGS) $< -o $@
 
-clean: 
-	rm dijkstra_serial dijkstra_thread bellmanford_serial
+bellmanford_thread: bellmanford_thread.cc
+	$(CXX) $(CFLAGS) $< -o $@ -fopenmp
+
+clean: clean_dijkstra clean_bellmanford
+
+clean_dijkstra:
+	rm dijkstra_serial dijkstra_thread
+
+clean_bellmanford:
+	rm bellmanford_serial bellmanford_thread
 	
 run_serial: 
 	./dijkstra_serial ./tools/output2.txt 10000 50000

@@ -74,7 +74,7 @@ if __name__ == '__main__':
         print("Not a fully connected graph !!", file=sys.stderr)
         sys.exit()
     elif args.e > args.n * (args.n-1) / 2:
-        print("May have repeated edges !!")
+        print("May have repeated edges !!", file=sys.stderr)
         sys.exit()
 
     G = nx.Graph()

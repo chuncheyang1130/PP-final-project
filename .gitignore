@@ -1,5 +1,8 @@
 *.txt
-bellmanford
-dijkstra
+bellmanford_serial
+bellmanford_thread
+dijkstra_serial
+dijkstra_thread
+
 *.pkl
 .vscode
