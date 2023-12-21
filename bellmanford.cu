@@ -4,7 +4,7 @@
 #include <iostream>
 #include <algorithm>
 #include "CycleTimer.h"
-#include <omp.h>
+#include <cuda.h>
 
 #define INF 1e9
 
@@ -14,19 +14,14 @@ struct Edge{
     int weight;
 };
 
-int BellmanFord(Edge* edges, int srcNode, int dstNode, int numNodes, int numEdges){
+__global__ BellmanFordKernel(std::vector<Edge>& edges, int srcNode, int dstNode, int numNodes){
 
-    omp_set_num_threads(4);
-
-    int* dist = (int*)malloc(numNodes * sizeof(int));
+    std::vector<int> dist(numNodes, INF);
 
     int N = numNodes - 1;
-
-    #pragma omp parallel for
-    for(int i = 0; i < numNodes; i++)
-        dist[i] = INF;
-
     dist[srcNode] = 0;
+
+    int edge_num = edges.size();
 
     // while (N--){
     //     for (const auto& edge : edges){
@@ -35,16 +30,9 @@ int BellmanFord(Edge* edges, int srcNode, int dstNode, int numNodes, int numEdge
     //     }
     // }
 
-    int* local_dist[4];
+    omp_set_num_threads(4);
 
-    #pragma omp parallel
-    {
-        int id = omp_get_thread_num();
-
-        local_dist[id] = (int*)malloc(numNodes * sizeof(int));
-
-        memcpy(local_dist[id], dist, numNodes * sizeof(int));
-    }
+    std::vector<std::vector<int>> local_dist(4, std::vector<int>(dist));
 
     while (N--) {
 
@@ -58,7 +46,7 @@ int BellmanFord(Edge* edges, int srcNode, int dstNode, int numNodes, int numEdge
             int id = omp_get_thread_num();            
 
             #pragma omp for
-            for (int i = 0; i < numEdges; i++){
+            for (int i = 0; i < edge_num; i++){
                 Edge edge = edges[i];
 
                 if (local_dist[id][edge.src] != INF){
@@ -72,7 +60,9 @@ int BellmanFord(Edge* edges, int srcNode, int dstNode, int numNodes, int numEdge
                 // std::printf("dist[%d] = %d\n", i, dist[i]);
             }
 
-            memcpy(local_dist[id], dist, numNodes * sizeof(int));
+            for (int i = 0; i < numNodes; i++){
+                local_dist[id][i] = dist[i];
+            }
             
         }
 
@@ -80,7 +70,7 @@ int BellmanFord(Edge* edges, int srcNode, int dstNode, int numNodes, int numEdge
     }
 
     // #pragma omp parallel for
-    for (int i = 0; i < numEdges; i++){
+    for (int i = 0; i < edge_num; i++){
         Edge edge = edges[i];
         if (dist[edge.src] != INF && dist[edge.dst] > dist[edge.src] + edge.weight){
             std::printf("NEGATIVE CYCLE !!\n");
@@ -92,13 +82,18 @@ int BellmanFord(Edge* edges, int srcNode, int dstNode, int numNodes, int numEdge
     
 }
 
+int BellmanFord(Edge* edges, int srcNode, int dstNode, int numNodes, int numEdges){
+    Edge* deviceArray;
+    cudaMalloc(&deviceArray, numEdges * sizeof(struct Edge));
+
+    
+}
+
 int main(int argc, char *argv[]) {
     if (argc < 4) {
         std::printf("usage: ./bellmanford_thread file.txt srcNode dstNode\n");
         return 1;
     }
-
-    Edge* edges;
     
     std::ifstream ifs;
     ifs.open(argv[1], std::ifstream::in);
@@ -111,7 +106,7 @@ int main(int argc, char *argv[]) {
     ifs >> numNodes >> numEdges;
     std::printf("[numNode]: %d [numEdges]: %d\n", numNodes, numEdges);
 
-    edges = (Edge*)malloc(numEdges * 2 * sizeof(struct Edge));
+    Edge* edges = (Edge*)malloc(numEdges * 2 * sizeof(struct Edge));
 
     int srcNode = std::atoi(argv[2]);
     int dstNode = std::atoi(argv[3]);
@@ -126,20 +121,26 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < numEdges; i++) {
         ifs >> source >> target >> weight;
 
+        // Edge e1 = {source, target, weight};
+        // edges.push_back(e1);
         edges[i*2].src = source;
-        edges[i*2].dst = target;
-        edges[i*2].weight = weight;
+        edges[i*2+1].src = source;
 
-        edges[i*2+1].src = target;
-        edges[i*2+1].dst = source;
+        edges[i*2].dst = target;
+        edges[i*2+1].dst = target;
+
+        edges[i*2].weight = weight;
         edges[i*2+1].weight = weight;
+
+        // Edge e2 = {target, source, weight};
+        // edges.push_back(e2);
     }
 
     std::printf("Successfully construct Edge vector\n");
     ifs.close();
 
     double startTime = CycleTimer::currentSeconds();
-    int minDist = BellmanFord(edges, srcNode, dstNode, numNodes, numEdges);
+    int minDist = BellmanFord(edges, srcNode, dstNode, numNodes, numEdges*2);
     double endTime = CycleTimer::currentSeconds();
 
     std::printf("[BellmanFord thread]:\t\t[%lf] ms\n", (endTime - startTime) * 1000);
