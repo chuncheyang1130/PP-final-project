@@ -6,7 +6,7 @@ NVFLAGS = -O2 -Xcompiler -lrt -lm
 
 all: dijkstra bellmanford
 
-bellmanford: bellmanford_serial bellmanford_thread
+bellmanford: bellmanford_serial bellmanford_thread bellmanford_cuda
 
 dijkstra: dijkstra_serial dijkstra_thread dijkstra_cuda
 
@@ -24,6 +24,9 @@ bellmanford_serial: bellmanford_serial.cc
 
 bellmanford_thread: bellmanford_thread.cc
 	$(CXX) $(CFLAGS) $< -o $@ -fopenmp
+
+bellmanford_cuda: bellmanford_cuda.cu
+	$(NVCC) $(NVFLAGS) $< -o $@
 
 clean: clean_dijkstra clean_bellmanford
 
