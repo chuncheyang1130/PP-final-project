@@ -14,25 +14,24 @@ struct Edge{
     int weight;
 };
 
-__global__ BellmanFordKernel(Edge* edges, int* dist, int numNodes, int numEdges){
+__global__ void BellmanFordKernel(Edge* edges, int* dist, int numNodes, int numEdges){
 
     int threadId = blockIdx.x * blockDim.x + threadIdx.x;
 
     if (threadId >= numEdges)
         return;
 
-    edge = edges[threadId];
+    Edge edge = edges[threadId];
 
     if (dist[edge.src] != INF/*  && dist[edge.src] + edge.weight < dist[edge.dst] */)
         atomicMin(&dist[edge.dst], dist[edge.src] + edge.weight);
         
-    
 }
 
 int BellmanFord(Edge* edges, int srcNode, int dstNode, int numNodes, int numEdges){
     Edge* deviceEdgeArray;
     cudaMalloc(&deviceEdgeArray, numEdges * sizeof(struct Edge));
-    cudaMemcpy(devcieEdgeArray, edges, numEdges * sizeof(struct Edge), cudaMemcpyHostToDevice);
+    cudaMemcpy(deviceEdgeArray, edges, numEdges * sizeof(struct Edge), cudaMemcpyHostToDevice);
     
     int* dist = (int*)malloc(numNodes * sizeof(int));
     

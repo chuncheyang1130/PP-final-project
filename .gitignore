@@ -1,6 +1,7 @@
 *.txt
 bellmanford_serial
 bellmanford_thread
+bellmanford_cuda
 dijkstra_serial
 dijkstra_thread
 dijkstra_cuda
