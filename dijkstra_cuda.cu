@@ -29,29 +29,30 @@ __global__ void dijkstra(int *deviceAdjMatrix, int *deviceDist, bool *deviceVisi
 
 int main(int argc, char *argv[]) {
     if (argc < 4) {
-        std::printf("usage: ./dijkstra file.txt node_num edge_num");
+        std::printf("usage: ./dijkstra_cuda file.txt srcNode dstNode");
         return 1;
     }
-    unsigned int numNodes = std::atoi(argv[2]);
-    unsigned int numEdges = std::atoi(argv[3]);
-    std::printf("[Nodes]: %u [Edges]: %u\n", numNodes, numEdges);
-    
-    int* adjMatrix = (int *)calloc(numNodes * numNodes, sizeof(int *));
-    // std::vector<std::vector<int>> adjMatrix(numNodes, std::vector<int>(numNodes, 0));
-    
+
     std::ifstream ifs;
     ifs.open(argv[1], std::ifstream::in);
     if (!ifs.good()) {
         std::printf("[Error] Cannot open file %s\n", argv[1]);
         return 1;
-    }
-    int srcNode, dstNode;
-    ifs >> srcNode >> dstNode;
-    std::printf("[srcNode]: %d [dstNode]: %d\n", srcNode, dstNode);
+    }    
+    int numNodes, numEdges;
+    ifs >> numNodes >> numEdges;
+    std::printf("[numNode]: %d [numEdges]: %d\n", numNodes, numEdges);
+    int* adjMatrix = (int *)calloc(numNodes * numNodes, sizeof(int));
+    
+    int srcNode = std::atoi(argv[2]);
+    int dstNode = std::atoi(argv[3]);
+    std::printf("[srcNode]: %u [dstNode]: %u\n", srcNode, dstNode);
+
     int source, target, weight;
-    for (unsigned int i = 0; i < numEdges; i++) {
+    for (int i = 0; i < numEdges; i++) {
         ifs >> source >> target >> weight;
         adjMatrix[source * numNodes + target] = weight;
+        adjMatrix[target * numNodes + source] = weight;
     }
     std::printf("Successfully construct adjacency matrix\n");
     ifs.close();
@@ -64,6 +65,7 @@ int main(int argc, char *argv[]) {
     int *deviceAdjMatrix;
     cudaMalloc((void **)&deviceAdjMatrix, adjMatrixSize * sizeof(int));
     cudaMemcpy(deviceAdjMatrix, adjMatrix, adjMatrixSize * sizeof(int), cudaMemcpyHostToDevice);
+    
     int *dist = (int *)calloc(numNodes, sizeof(int));
     int *minIndex = (int *)malloc(1 * sizeof(int));
     bool *visited  = (bool *)calloc(numNodes, sizeof(int));
@@ -82,7 +84,7 @@ int main(int argc, char *argv[]) {
     cudaMemcpy(deviceDist, dist, numNodes * sizeof(int), cudaMemcpyHostToDevice);
     cudaMemcpy(deviceVisited, visited, numNodes * sizeof(int), cudaMemcpyHostToDevice);
 
-    dim3 threadsPerBlockRelax(16, 1);
+    dim3 threadsPerBlockRelax(256, 1);
     dim3 numBlockRelax(numNodes / threadsPerBlockRelax.x, 1);
 
     cudaEventRecord(startEvent);
@@ -107,6 +109,10 @@ int main(int argc, char *argv[]) {
     cudaFree(deviceDist);
     cudaFree(deviceMinIndex);
     cudaFree(deviceVisited);
+
     free(adjMatrix);
+    free(dist);
+    free(minIndex);
+    free(visited);
     return 0;
 }

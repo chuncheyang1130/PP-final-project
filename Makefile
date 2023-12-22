@@ -34,10 +34,10 @@ clean_bellmanford:
 	rm bellmanford_serial bellmanford_thread
 	
 run_serial: 
-	./dijkstra_serial ./tools/output.txt 10000 50000
+	./dijkstra_serial ./tools/output.txt 0 1000
 
 run_thread:
-	./dijkstra_thread ./tools/output.txt 10000 50000
+	./dijkstra_thread ./tools/output.txt 0 1000
 
 run_cuda: 
-	./dijkstra_cuda ./tools/output.txt 10000 50000
+	./dijkstra_cuda ./tools/output.txt 0 1000
