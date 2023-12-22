@@ -13,15 +13,21 @@ struct Edge{
     int weight;
 };
 
-int BellmanFord(std::vector<Edge>& edges, int srcNode, int dstNode, int numNodes){
+int BellmanFord(Edge* edges, int srcNode, int dstNode, int numNodes, int numEdges){
 
-    std::vector<int> dist(numNodes, INF);
+    int* dist = (int*)malloc(numNodes * sizeof(int));
 
     int N = numNodes - 1;
+
+    for(int i = 0; i < numNodes; i++)
+        dist[i] = INF;
+
     dist[srcNode] = 0;
 
     while (N--){
-        for (const auto& edge : edges){
+        for (int i = 0; i < numEdges; i++){
+            Edge edge = edges[i];
+
             if (dist[edge.src] != INF)
                 dist[edge.dst] = std::min(dist[edge.src] + edge.weight, dist[edge.dst]);
         }
@@ -32,7 +38,10 @@ int BellmanFord(std::vector<Edge>& edges, int srcNode, int dstNode, int numNodes
         // std::printf("\n");
     }
 
-    for (const auto& edge : edges){
+    for (int i = 0; i < numEdges; i++){
+
+        Edge edge = edges[i];
+
         if (dist[edge.src] != INF && dist[edge.dst] > dist[edge.src] + edge.weight){
             std::printf("NEGATIVE CYCLE !!\n");
             return -1;
@@ -49,7 +58,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
-    std::vector<Edge> edges;
+    Edge* edges;
     
     std::ifstream ifs;
     ifs.open(argv[1], std::ifstream::in);
@@ -61,6 +70,8 @@ int main(int argc, char *argv[]) {
     int numNodes, numEdges;
     ifs >> numNodes >> numEdges;
     std::printf("[numNode]: %d [numEdges]: %d\n", numNodes, numEdges);
+
+    edges = (Edge*)malloc(numEdges * 2 * sizeof(struct Edge));
 
     int srcNode = std::atoi(argv[2]);
     int dstNode = std::atoi(argv[3]);
@@ -75,18 +86,20 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < numEdges; i++) {
         ifs >> source >> target >> weight;
 
-        Edge e1 = {source, target, weight};
-        edges.push_back(e1);
+        edges[i*2].src = source;
+        edges[i*2].dst = target;
+        edges[i*2].weight = weight;
 
-        Edge e2 = {target, source, weight};
-        edges.push_back(e2);
+        edges[i*2+1].src = target;
+        edges[i*2+1].dst = source;
+        edges[i*2+1].weight = weight;
     }
 
     std::printf("Successfully construct Edge vector\n");
     ifs.close();
 
     double startTime = CycleTimer::currentSeconds();
-    int minDist = BellmanFord(edges, srcNode, dstNode, numNodes);
+    int minDist = BellmanFord(edges, srcNode, dstNode, numNodes, numEdges*2);
     double endTime = CycleTimer::currentSeconds();
 
     std::printf("[BellmanFord Serial]:\t\t[%lf] ms\n", (endTime - startTime) * 1000);

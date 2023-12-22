@@ -4,7 +4,7 @@
 #include <iostream>
 #include <algorithm>
 #include "CycleTimer.h"
-#include <omp.h>
+#include <cuda.h>
 
 #define INF 1e9
 
@@ -14,72 +14,47 @@ struct Edge{
     int weight;
 };
 
+__global__ void BellmanFordKernel(Edge* edges, int* dist, int numNodes, int numEdges){
+
+    int threadId = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (threadId >= numEdges)
+        return;
+
+    Edge edge = edges[threadId];
+
+    if (dist[edge.src] != INF/*  && dist[edge.src] + edge.weight < dist[edge.dst] */)
+        atomicMin(&dist[edge.dst], dist[edge.src] + edge.weight);
+        
+}
+
 int BellmanFord(Edge* edges, int srcNode, int dstNode, int numNodes, int numEdges){
-
-    omp_set_num_threads(4);
-
+    Edge* deviceEdgeArray;
+    cudaMalloc(&deviceEdgeArray, numEdges * sizeof(struct Edge));
+    cudaMemcpy(deviceEdgeArray, edges, numEdges * sizeof(struct Edge), cudaMemcpyHostToDevice);
+    
     int* dist = (int*)malloc(numNodes * sizeof(int));
-
-    int N = numNodes - 1;
-
-    #pragma omp parallel for
-    for(int i = 0; i < numNodes; i++)
+    
+    for (int i = 0; i < numNodes; i++){
         dist[i] = INF;
+    }
 
     dist[srcNode] = 0;
 
-    // while (N--){
-    //     for (const auto& edge : edges){
-    //         if (dist[edge.src] != INF)
-    //             dist[edge.dst] = std::min(dist[edge.src] + edge.weight, dist[edge.dst]);
-    //     }
-    // }
+    int* deviceDistArray;
+    cudaMalloc(&deviceDistArray, numNodes * sizeof(int));
+    cudaMemcpy(deviceDistArray, dist, numNodes * sizeof(int), cudaMemcpyHostToDevice);
+    
+    int N = numNodes - 1;
+    int threadPerBlock = 32;
+    int numBlocks = (numEdges + threadPerBlock - 1) / threadPerBlock;
 
-    int* local_dist[4];
-
-    #pragma omp parallel
-    {
-        int id = omp_get_thread_num();
-
-        local_dist[id] = (int*)malloc(numNodes * sizeof(int));
-
-        memcpy(local_dist[id], dist, numNodes * sizeof(int));
+    while(N--){
+        BellmanFordKernel<<<numBlocks, threadPerBlock>>>(deviceEdgeArray, deviceDistArray, numNodes, numEdges);
     }
 
-    while (N--) {
+    cudaMemcpy(dist, deviceDistArray, numNodes * sizeof(int), cudaMemcpyDeviceToHost);
 
-        // for(int i = 0; i < numNodes; i++){
-        //     std::printf("local_dist[%d] = %d\n", i, local_dist[0][i]);
-        // }
-        // std::printf("\n");
-
-        #pragma omp parallel
-        {
-            int id = omp_get_thread_num();            
-
-            #pragma omp for
-            for (int i = 0; i < numEdges; i++){
-                Edge edge = edges[i];
-
-                if (local_dist[id][edge.src] != INF){
-                    local_dist[id][edge.dst] = std::min(local_dist[id][edge.src] + edge.weight, local_dist[id][edge.dst]);
-                }      
-            }
-            
-            #pragma omp for
-            for (int i = 0; i < numNodes; i++){
-                dist[i] = std::min({local_dist[0][i], local_dist[1][i], local_dist[2][i], local_dist[3][i]});
-                // std::printf("dist[%d] = %d\n", i, dist[i]);
-            }
-
-            memcpy(local_dist[id], dist, numNodes * sizeof(int));
-            
-        }
-
-        
-    }
-
-    // #pragma omp parallel for
     for (int i = 0; i < numEdges; i++){
         Edge edge = edges[i];
         if (dist[edge.src] != INF && dist[edge.dst] > dist[edge.src] + edge.weight){
@@ -88,7 +63,13 @@ int BellmanFord(Edge* edges, int srcNode, int dstNode, int numNodes, int numEdge
         }
     }
 
-    return dist[dstNode];
+    cudaFree(deviceEdgeArray);
+    cudaFree(deviceDistArray);
+    
+    int min_dist = dist[dstNode];
+    free(dist);
+
+    return min_dist;
     
 }
 
@@ -97,8 +78,6 @@ int main(int argc, char *argv[]) {
         std::printf("usage: ./bellmanford_thread file.txt srcNode dstNode\n");
         return 1;
     }
-
-    Edge* edges;
     
     std::ifstream ifs;
     ifs.open(argv[1], std::ifstream::in);
@@ -111,7 +90,7 @@ int main(int argc, char *argv[]) {
     ifs >> numNodes >> numEdges;
     std::printf("[numNode]: %d [numEdges]: %d\n", numNodes, numEdges);
 
-    edges = (Edge*)malloc(numEdges * 2 * sizeof(struct Edge));
+    Edge* edges = (Edge*)malloc(numEdges * 2 * sizeof(struct Edge));
 
     int srcNode = std::atoi(argv[2]);
     int dstNode = std::atoi(argv[3]);
@@ -126,13 +105,19 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i < numEdges; i++) {
         ifs >> source >> target >> weight;
 
+        // Edge e1 = {source, target, weight};
+        // edges.push_back(e1);
         edges[i*2].src = source;
-        edges[i*2].dst = target;
-        edges[i*2].weight = weight;
-
         edges[i*2+1].src = target;
+
+        edges[i*2].dst = target;
         edges[i*2+1].dst = source;
+
+        edges[i*2].weight = weight;
         edges[i*2+1].weight = weight;
+
+        // Edge e2 = {target, source, weight};
+        // edges.push_back(e2);
     }
 
     std::printf("Successfully construct Edge vector\n");
