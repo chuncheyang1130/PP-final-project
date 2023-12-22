@@ -46,7 +46,7 @@ int BellmanFord(Edge* edges, int srcNode, int dstNode, int numNodes, int numEdge
     cudaMemcpy(deviceDistArray, dist, numNodes * sizeof(int), cudaMemcpyHostToDevice);
     
     int N = numNodes - 1;
-    int threadPerBlock = 32;
+    int threadPerBlock = 64;
     int numBlocks = (numEdges + threadPerBlock - 1) / threadPerBlock;
 
     while(N--){
