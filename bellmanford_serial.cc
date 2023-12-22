@@ -99,7 +99,7 @@ int main(int argc, char *argv[]) {
     ifs.close();
 
     double startTime = CycleTimer::currentSeconds();
-    int minDist = BellmanFord(edges, srcNode, dstNode, numNodes, numEdges);
+    int minDist = BellmanFord(edges, srcNode, dstNode, numNodes, numEdges*2);
     double endTime = CycleTimer::currentSeconds();
 
     std::printf("[BellmanFord Serial]:\t\t[%lf] ms\n", (endTime - startTime) * 1000);
