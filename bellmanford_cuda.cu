@@ -75,7 +75,7 @@ int BellmanFord(Edge* edges, int srcNode, int dstNode, int numNodes, int numEdge
 
 int main(int argc, char *argv[]) {
     if (argc < 4) {
-        std::printf("usage: ./bellmanford_thread file.txt srcNode dstNode\n");
+        std::printf("usage: ./bellmanford_cuda file.txt srcNode dstNode\n");
         return 1;
     }
     
@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
     int minDist = BellmanFord(edges, srcNode, dstNode, numNodes, numEdges*2);
     double endTime = CycleTimer::currentSeconds();
 
-    std::printf("[BellmanFord thread]:\t\t[%lf] ms\n", (endTime - startTime) * 1000);
+    std::printf("[BellmanFord cuda]:\t\t[%lf] ms\n", (endTime - startTime) * 1000);
     std::printf("The minimum distance from %d to %d is: %d\n", srcNode, dstNode, minDist);
     
     return 0;

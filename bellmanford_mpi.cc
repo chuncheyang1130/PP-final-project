@@ -24,6 +24,7 @@ int BellmanFord(Edge* edges, int srcNode, int dstNode, int numNodes, int numEdge
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
 
     int* dist = (int*)malloc(numNodes * sizeof(int));
+    // int* reduce_dist = (int*)malloc(numNodes * sizeof(int));
 
     int N = numNodes - 1;
 
@@ -36,6 +37,8 @@ int BellmanFord(Edge* edges, int srcNode, int dstNode, int numNodes, int numEdge
     int start_ind = world_rank * edge_per_rank;
     int end_ind = start_ind + edge_per_rank > numEdges ? numEdges : start_ind + edge_per_rank;
 
+    std::printf("rank: %d, start_ind: %d, end_ind: %d\n", world_rank, start_ind, end_ind);
+
 
     while (N--) {
 
@@ -47,7 +50,19 @@ int BellmanFord(Edge* edges, int srcNode, int dstNode, int numNodes, int numEdge
             }      
         }
 
-        MPI_Allreduce(dist, dist, numNodes, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
+        // std::printf("rank %d barrier\n", world_rank);
+
+        MPI_Allreduce(MPI_IN_PLACE, dist, numNodes, MPI_INT, MPI_MIN, MPI_COMM_WORLD);
+
+        // if(world_rank == 0 && N == 0){
+        //     for (int i = 0; i < numNodes; i++){
+        //         std::printf("%d ", dist[i]);
+        //     }
+        //     std::printf("\n");
+        // }
+        
+
+        // memcpy(dist, reduce_dist, numNodes * sizeof(int));
         
     }
 
@@ -62,7 +77,7 @@ int BellmanFord(Edge* edges, int srcNode, int dstNode, int numNodes, int numEdge
         }
     }
 
-    MPI_Allreduce(&has_neg_cycle, &has_neg_cycle, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD); 
+    MPI_Allreduce(MPI_IN_PLACE, &has_neg_cycle, 1, MPI_INT, MPI_MAX, MPI_COMM_WORLD); 
 
     if (has_neg_cycle)
         return -1;
@@ -114,6 +129,10 @@ void createEdges(int* numNodes_ptr, int* numEdges_ptr, Edge** edges_ptr, char* g
             edges[i*2+1].weight = weight;
         }
 
+        // for (int i = 0; i < numEdges*2; i++){
+        //     std::printf("%d %d %d\n", edges[i].src, edges[i].dst, edges[i].weight);
+        // }
+
         std::printf("Successfully construct Edge vector\n");
         ifs.close();
 
@@ -134,13 +153,26 @@ void createEdges(int* numNodes_ptr, int* numEdges_ptr, Edge** edges_ptr, char* g
         numEdges = *numEdges_ptr;        
     }
 
+    int block_lengths[3] = {1, 1, 1};
+    MPI_Datatype types[3] = {MPI_INT, MPI_INT, MPI_INT};
+    MPI_Aint offsets[3];
+
+    offsets[0] = offsetof(struct Edge, src);
+    offsets[1] = offsetof(struct Edge, dst);
+    offsets[2] = offsetof(struct Edge, weight);
+
+    MPI_Datatype mpi_edge;
+    MPI_Type_create_struct(3, block_lengths, offsets, types, &mpi_edge);
+    MPI_Type_commit(&mpi_edge);
+
+    // std::printf("mpi")
 
     if(world_rank == 0){
 
         MPI_Request requests[LEN];
 
         for(int dst_rank = 1; dst_rank < world_size; dst_rank++){
-            MPI_Isend(*edges_ptr, numEdges, MPI_INT, dst_rank, tag, MPI_COMM_WORLD, &requests[dst_rank]);
+            MPI_Isend(*edges_ptr, numEdges*2, mpi_edge, dst_rank, tag, MPI_COMM_WORLD, &requests[dst_rank]);
         }
 
     }else{
@@ -148,20 +180,31 @@ void createEdges(int* numNodes_ptr, int* numEdges_ptr, Edge** edges_ptr, char* g
 
         *edges_ptr = (Edge*)malloc(numEdges * 2 * sizeof(struct Edge));
         
-        MPI_Irecv(*edges_ptr, numEdges, MPI_INT, src_rank, tag, MPI_COMM_WORLD, &req);
-        MPI_Wait(&req, MPI_STATUS_IGNORE);
+        MPI_Irecv(*edges_ptr, numEdges*2, mpi_edge, src_rank, tag, MPI_COMM_WORLD, &req);
+        MPI_Wait(&req, &status);
+
+        Edge* edges = *edges_ptr;
+
+        // if (world_rank == 2){
+        //     for (int i = 0; i < numEdges*2; i++){
+        //         std::printf("%d %d %d\n", edges[i].src, edges[i].dst, edges[i].weight);
+        //     }
+        // }
 
     }
+
+    MPI_Type_free(&mpi_edge);
 
 }
 
 int main(int argc, char *argv[]) {
     if (argc < 4) {
-        std::printf("usage: ./bellmanford_thread file.txt srcNode dstNode\n");
+        std::printf("usage: ./bellmanford_mpi file.txt srcNode dstNode\n");
         return 1;
     }
 
     MPI_Init(&argc, &argv);
+
     int world_size, world_rank;
     int numNodes = -1, numEdges = -1;
     Edge* edges;
@@ -190,8 +233,18 @@ int main(int argc, char *argv[]) {
     int minDist = BellmanFord(edges, srcNode, dstNode, numNodes, numEdges*2);
     double endTime = CycleTimer::currentSeconds();
 
-    std::printf("[BellmanFord thread]:\t\t[%lf] ms\n", (endTime - startTime) * 1000);
-    std::printf("The minimum distance from %d to %d is: %d\n", srcNode, dstNode, minDist);
+    double elapsedTime = endTime - startTime;
+    double avgElapsedTime;
+
+    MPI_Reduce(&elapsedTime, &avgElapsedTime, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    
+    if (world_rank == 0){
+        std::printf("[BellmanFord mpi]:\t\t[%lf] ms\n", (avgElapsedTime / world_size) * 1000);
+        std::printf("The minimum distance from %d to %d is: %d\n", srcNode, dstNode, minDist);
+    }
+
+    MPI_Finalize();
+    
     
     return 0;
 }
