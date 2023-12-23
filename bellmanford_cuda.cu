@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
 
     int numNodes, numEdges;
     ifs >> numNodes >> numEdges;
-    std::printf("[numNode]: %d [numEdges]: %d\n", numNodes, numEdges);
+    std::printf("[numNodes]: %d [numEdges]: %d\n", numNodes, numEdges);
 
     Edge* edges = (Edge*)malloc(numEdges * 2 * sizeof(struct Edge));
 

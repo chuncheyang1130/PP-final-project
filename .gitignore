@@ -2,6 +2,7 @@
 bellmanford_serial
 bellmanford_thread
 bellmanford_cuda
+bellmanford_mpi
 dijkstra_serial
 dijkstra_thread
 dijkstra_cuda
