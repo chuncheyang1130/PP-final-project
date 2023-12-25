@@ -46,7 +46,7 @@ int BellmanFord(Edge* edges, int srcNode, int dstNode, int numNodes, int numEdge
     cudaMemcpy(deviceDistArray, dist, numNodes * sizeof(int), cudaMemcpyHostToDevice);
     
     int N = numNodes - 1;
-    int threadPerBlock = 32;
+    int threadPerBlock = 64;
     int numBlocks = (numEdges + threadPerBlock - 1) / threadPerBlock;
 
     while(N--){
@@ -75,7 +75,7 @@ int BellmanFord(Edge* edges, int srcNode, int dstNode, int numNodes, int numEdge
 
 int main(int argc, char *argv[]) {
     if (argc < 4) {
-        std::printf("usage: ./bellmanford_thread file.txt srcNode dstNode\n");
+        std::printf("usage: ./bellmanford_cuda file.txt srcNode dstNode\n");
         return 1;
     }
     
@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
 
     int numNodes, numEdges;
     ifs >> numNodes >> numEdges;
-    std::printf("[numNode]: %d [numEdges]: %d\n", numNodes, numEdges);
+    std::printf("[numNodes]: %d [numEdges]: %d\n", numNodes, numEdges);
 
     Edge* edges = (Edge*)malloc(numEdges * 2 * sizeof(struct Edge));
 
@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
     int minDist = BellmanFord(edges, srcNode, dstNode, numNodes, numEdges*2);
     double endTime = CycleTimer::currentSeconds();
 
-    std::printf("[BellmanFord thread]:\t\t[%lf] ms\n", (endTime - startTime) * 1000);
+    std::printf("[BellmanFord cuda]:\t\t[%lf] ms\n", (endTime - startTime) * 1000);
     std::printf("The minimum distance from %d to %d is: %d\n", srcNode, dstNode, minDist);
     
     return 0;
