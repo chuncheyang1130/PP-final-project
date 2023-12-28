@@ -21,7 +21,6 @@ int BellmanFord(Edge* edges, int srcNode, int dstNode, int numNodes, int numEdge
 
     int* dist = (int*)malloc(numNodes * sizeof(int));
     int* parent = (int*)malloc(numNodes * sizeof(int));
-    int* route = (int*)malloc(numNodes * sizeof(int));
 
     int N = numNodes - 1;
 
