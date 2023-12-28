@@ -8,7 +8,7 @@
 
 #define INF 1e9
 #define ITER_NUM 10
-#define THREAD_NUM 3
+#define THREAD_NUM 4
 
 struct Edge{
     int src;
