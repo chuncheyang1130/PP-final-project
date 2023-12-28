@@ -37,7 +37,7 @@ int BellmanFord(Edge* edges, int srcNode, int dstNode, int numNodes, int numEdge
     int start_ind = world_rank * edge_per_rank;
     int end_ind = start_ind + edge_per_rank > numEdges ? numEdges : start_ind + edge_per_rank;
 
-    std::printf("rank: %d, start_ind: %d, end_ind: %d\n", world_rank, start_ind, end_ind);
+    // std::printf("rank: %d, start_ind: %d, end_ind: %d\n", world_rank, start_ind, end_ind);
 
 
     while (N--) {
@@ -234,12 +234,11 @@ int main(int argc, char *argv[]) {
     double endTime = CycleTimer::currentSeconds();
 
     double elapsedTime = endTime - startTime;
-    double avgElapsedTime;
 
-    MPI_Reduce(&elapsedTime, &avgElapsedTime, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+    MPI_Reduce(MPI_IN_PLACE, &elapsedTime, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     
     if (world_rank == 0){
-        std::printf("[BellmanFord mpi]:\t\t[%lf] ms\n", (avgElapsedTime / world_size) * 1000);
+        std::printf("[BellmanFord mpi]:\t\t[%lf] ms\n", elapsedTime * 1000);
         std::printf("The minimum distance from %d to %d is: %d\n", srcNode, dstNode, minDist);
     }
 

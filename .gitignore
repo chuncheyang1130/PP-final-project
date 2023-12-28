@@ -7,5 +7,4 @@ dijkstra_serial
 dijkstra_thread
 dijkstra_cuda
 
-*.pkl
 .vscode
