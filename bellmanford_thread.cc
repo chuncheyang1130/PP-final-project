@@ -8,6 +8,7 @@
 
 #define INF 1e9
 #define ITER_NUM 10
+#define THREAD_NUM 3
 
 struct Edge{
     int src;
@@ -17,7 +18,7 @@ struct Edge{
 
 int BellmanFord(Edge* edges, int srcNode, int dstNode, int numNodes, int numEdges, bool printRoute){
 
-    omp_set_num_threads(4);
+    omp_set_num_threads(THREAD_NUM);
 
     int* dist = (int*)malloc(numNodes * sizeof(int));
     int* parent = (int*)malloc(numNodes * sizeof(int));
@@ -81,7 +82,7 @@ int BellmanFord(Edge* edges, int srcNode, int dstNode, int numNodes, int numEdge
                 int minId = 0;
                 int minVal = local_dist[0][i];
 
-                for (int j = 1; j < 4; j++){
+                for (int j = 1; j < THREAD_NUM; j++){
                     if (local_dist[j][i] < minVal){
                         minVal = local_dist[j][i];
                         minId = j;
@@ -98,7 +99,7 @@ int BellmanFord(Edge* edges, int srcNode, int dstNode, int numNodes, int numEdge
             // }
 
             memcpy(local_dist[id], dist, numNodes * sizeof(int));
-            // memcpy(local_parent[id], parent, numNodes * sizeof(int));
+            memcpy(local_parent[id], parent, numNodes * sizeof(int));
             
         }
 
@@ -109,7 +110,7 @@ int BellmanFord(Edge* edges, int srcNode, int dstNode, int numNodes, int numEdge
     {
         int id = omp_get_thread_num(); 
         free(local_dist[id]);
-        // free(local_parent[id]);
+        free(local_parent[id]);
     }
 
     for (int i = 0; i < numEdges; i++){
@@ -196,7 +197,7 @@ int main(int argc, char *argv[]) {
         edges[i*2+1].weight = weight;
     }
 
-    std::printf("Successfully construct Edge vector\n");
+    // std::printf("Successfully construct Edge vector\n");
     ifs.close();
 
     double avgTime = 0.0;
@@ -215,8 +216,8 @@ int main(int argc, char *argv[]) {
 
     printRoute = true;
     std::printf("[BellmanFord thread]:\t\t[%lf] ms\n", avgTime * 1000);
-    // minDist = BellmanFord(edges, srcNode, dstNode, numNodes, numEdges*2, printRoute);
-    std::printf("The minimum distance from %d to %d is: %d\n", srcNode, dstNode, minDist);
+    minDist = BellmanFord(edges, srcNode, dstNode, numNodes, numEdges*2, printRoute);
+    std::printf("The minimum distance from %d to %d is: %d\n\n", srcNode, dstNode, minDist);
     
     return 0;
 }

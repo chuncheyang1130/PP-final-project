@@ -131,7 +131,7 @@ int main(int argc, char *argv[]) {
         edges[i*2+1].weight = weight;
     }
 
-    std::printf("Successfully construct Edge vector\n");
+    // std::printf("Successfully construct Edge vector\n");
     ifs.close();
 
     double avgTime = 0.0;
@@ -150,7 +150,7 @@ int main(int argc, char *argv[]) {
     printRoute = true;
     std::printf("[BellmanFord Serial]:\t\t[%lf] ms\n", avgTime * 1000);
     minDist = BellmanFord(edges, srcNode, dstNode, numNodes, numEdges*2, printRoute);
-    std::printf("The minimum distance from %d to %d is: %d\n", srcNode, dstNode, minDist);
+    std::printf("The minimum distance from %d to %d is: %d\n\n", srcNode, dstNode, minDist);
     
     return 0;
 }

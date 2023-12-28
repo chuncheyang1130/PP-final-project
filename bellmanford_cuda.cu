@@ -138,7 +138,7 @@ int main(int argc, char *argv[]) {
     avgTime /= ITER_NUM;
 
     std::printf("[BellmanFord cuda]:\t\t[%lf] ms\n", avgTime * 1000);
-    std::printf("The minimum distance from %d to %d is: %d\n", srcNode, dstNode, minDist);
+    std::printf("The minimum distance from %d to %d is: %d\n\n", srcNode, dstNode, minDist);
     
     return 0;
 }

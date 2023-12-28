@@ -24,5 +24,12 @@ if __name__ == "__main__":
     srcNode = args.s
     dstNode = args.d
 
-    # print(nx.shortest_path(G, srcNode, dstNode, weight='weight', method='bellman-ford'), file=sys.stderr)
-    print("Groud Truth:", nx.shortest_path_length(G, srcNode, dstNode, weight='weight', method='bellman-ford'), file=sys.stderr)
+    route = nx.shortest_path(G, srcNode, dstNode, weight='weight', method='bellman-ford')
+
+    print("Ground Truth Shortest Path:")
+    for i in range(len(route)-1):
+        print(f'{route[i]} -> ', end='')
+    print(route[-1])
+    
+    print("Groud Truth Minimum Distance:", nx.shortest_path_length(G, srcNode, dstNode, weight='weight', method='bellman-ford'), file=sys.stderr)
+    print()
