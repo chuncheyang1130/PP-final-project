@@ -4,8 +4,8 @@ import networkx as nx
 import pickle
 from argparse import ArgumentParser
 
-def saveGraph(G : nx.Graph):
-    with open('general_graph.pkl', 'wb') as f:
+def saveGraph(G : nx.Graph, file : str):
+    with open(file, 'wb') as f:
         pickle.dump(G, f)
 
 def loadGraph(file : str):
@@ -105,4 +105,4 @@ if __name__ == '__main__':
     for info in graphInfo:
         print(info[0], info[1], info[2]['weight'])
 
-    saveGraph(G)
+    saveGraph(G, f'graph{args.n}_{args.e}.pkl')

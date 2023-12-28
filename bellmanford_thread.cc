@@ -15,17 +15,23 @@ struct Edge{
     int weight;
 };
 
-int BellmanFord(Edge* edges, int srcNode, int dstNode, int numNodes, int numEdges){
+int BellmanFord(Edge* edges, int srcNode, int dstNode, int numNodes, int numEdges, bool printRoute){
 
     omp_set_num_threads(4);
 
     int* dist = (int*)malloc(numNodes * sizeof(int));
+    int* parent = (int*)malloc(numNodes * sizeof(int));
+    int* route = (int*)malloc(numNodes * sizeof(int));
 
     int N = numNodes - 1;
 
     #pragma omp parallel for
     for(int i = 0; i < numNodes; i++)
         dist[i] = INF;
+
+    #pragma omp parallel for
+    for(int i = 0; i < numNodes; i++)
+        parent[i] = -1;
 
     dist[srcNode] = 0;
 
@@ -37,14 +43,17 @@ int BellmanFord(Edge* edges, int srcNode, int dstNode, int numNodes, int numEdge
     // }
 
     int* local_dist[4];
+    int* local_parent[4];
 
     #pragma omp parallel
     {
         int id = omp_get_thread_num();
 
         local_dist[id] = (int*)malloc(numNodes * sizeof(int));
+        local_parent[id] = (int*)malloc(numNodes * sizeof(int));
 
         memcpy(local_dist[id], dist, numNodes * sizeof(int));
+        memcpy(local_parent[id], parent, numNodes * sizeof(int));
     }
 
     while (N--) {
@@ -62,25 +71,48 @@ int BellmanFord(Edge* edges, int srcNode, int dstNode, int numNodes, int numEdge
             for (int i = 0; i < numEdges; i++){
                 Edge edge = edges[i];
 
-                if (local_dist[id][edge.src] != INF){
-                    local_dist[id][edge.dst] = std::min(local_dist[id][edge.src] + edge.weight, local_dist[id][edge.dst]);
+                if (local_dist[id][edge.src] != INF && local_dist[id][edge.src] + edge.weight < local_dist[id][edge.dst]){
+                    local_dist[id][edge.dst] = local_dist[id][edge.src] + edge.weight;
+                    local_parent[id][edge.dst] = edge.src;
                 }      
             }
             
             #pragma omp for
             for (int i = 0; i < numNodes; i++){
-                dist[i] = std::min({local_dist[0][i], local_dist[1][i], local_dist[2][i], local_dist[3][i]});
-                // std::printf("dist[%d] = %d\n", i, dist[i]);
+                int minId = 0;
+                int minVal = local_dist[0][i];
+
+                for (int j = 1; j < 4; j++){
+                    if (local_dist[j][i] < minVal){
+                        minVal = local_dist[j][i];
+                        minId = j;
+                    }
+                }
+
+                dist[i] = minVal;
+                parent[i] = local_parent[minId][i];
             }
 
+            // #pragma omp for
+            // for(int i = 0; i < numNodes; i++){
+            //     dist[i] = std::min({local_dist[0][i], local_dist[1][i], local_dist[2][i], local_dist[3][i]});
+            // }
+
             memcpy(local_dist[id], dist, numNodes * sizeof(int));
+            // memcpy(local_parent[id], parent, numNodes * sizeof(int));
             
         }
 
         
     }
 
-    // #pragma omp parallel for
+    #pragma omp parallel
+    {
+        int id = omp_get_thread_num(); 
+        free(local_dist[id]);
+        // free(local_parent[id]);
+    }
+
     for (int i = 0; i < numEdges; i++){
         Edge edge = edges[i];
         if (dist[edge.src] != INF && dist[edge.dst] > dist[edge.src] + edge.weight){
@@ -89,7 +121,36 @@ int BellmanFord(Edge* edges, int srcNode, int dstNode, int numNodes, int numEdge
         }
     }
 
-    return dist[dstNode];
+    int minDist = dist[dstNode];
+
+    if (printRoute){
+        int* route = (int*)malloc(numNodes * sizeof(int));
+        int numRouteNodes = 1;
+        route[0] = dstNode;
+
+        int curNode = dstNode;
+        
+        while(curNode != srcNode){
+            route[numRouteNodes] = parent[curNode];
+            curNode = parent[curNode];
+            numRouteNodes++;
+        }
+
+        std::printf("The shortest path is:\n");
+    
+        for (int i = numRouteNodes-1; i >= 1; i--){
+            std::printf("%d -> ", route[i]);
+        }
+
+        std::printf("%d\n", route[0]);
+
+        free(route);
+    }
+
+    free(dist);
+    free(parent);
+
+    return minDist;
     
 }
 
@@ -141,10 +202,11 @@ int main(int argc, char *argv[]) {
 
     double avgTime = 0.0;
     int minDist = 0;
+    bool printRoute = false;
 
     for (int i = 0; i < ITER_NUM; i++){
         double startTime = CycleTimer::currentSeconds();
-        minDist = BellmanFord(edges, srcNode, dstNode, numNodes, numEdges*2);
+        minDist = BellmanFord(edges, srcNode, dstNode, numNodes, numEdges*2, printRoute);
         double endTime = CycleTimer::currentSeconds();
 
         avgTime += endTime - startTime;
@@ -152,7 +214,9 @@ int main(int argc, char *argv[]) {
 
     avgTime /= ITER_NUM;
 
+    printRoute = true;
     std::printf("[BellmanFord thread]:\t\t[%lf] ms\n", avgTime * 1000);
+    // minDist = BellmanFord(edges, srcNode, dstNode, numNodes, numEdges*2, printRoute);
     std::printf("The minimum distance from %d to %d is: %d\n", srcNode, dstNode, minDist);
     
     return 0;

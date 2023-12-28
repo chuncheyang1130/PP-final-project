@@ -14,14 +14,18 @@ struct Edge{
     int weight;
 };
 
-int BellmanFord(Edge* edges, int srcNode, int dstNode, int numNodes, int numEdges){
+int BellmanFord(Edge* edges, int srcNode, int dstNode, int numNodes, int numEdges, bool printRoute){
 
     int* dist = (int*)malloc(numNodes * sizeof(int));
+    int* parent = (int*)malloc(numNodes * sizeof(int));
 
     int N = numNodes - 1;
 
     for(int i = 0; i < numNodes; i++)
         dist[i] = INF;
+
+    for(int i = 0; i < numNodes; i++)
+        parent[i] = -1;
 
     dist[srcNode] = 0;
 
@@ -29,8 +33,10 @@ int BellmanFord(Edge* edges, int srcNode, int dstNode, int numNodes, int numEdge
         for (int i = 0; i < numEdges; i++){
             Edge edge = edges[i];
 
-            if (dist[edge.src] != INF)
-                dist[edge.dst] = std::min(dist[edge.src] + edge.weight, dist[edge.dst]);
+            if (dist[edge.src] != INF && dist[edge.src] + edge.weight < dist[edge.dst]){
+                dist[edge.dst] = dist[edge.src] + edge.weight;
+                parent[edge.dst] = edge.src;
+            }
         }
 
         // for(int i = 0; i < numNodes; i++){
@@ -49,7 +55,36 @@ int BellmanFord(Edge* edges, int srcNode, int dstNode, int numNodes, int numEdge
         }
     }
 
-    return dist[dstNode];
+    int minDist = dist[dstNode];
+
+    if (printRoute){
+        int* route = (int*)malloc(numNodes * sizeof(int));
+        int numRouteNodes = 1;
+        route[0] = dstNode;
+
+        int curNode = dstNode;
+        
+        while(curNode != srcNode){
+            route[numRouteNodes] = parent[curNode];
+            curNode = parent[curNode];
+            numRouteNodes++;
+        }
+
+        std::printf("The shortest path is:\n");
+    
+        for (int i = numRouteNodes-1; i >= 1; i--){
+            std::printf("%d -> ", route[i]);
+        }
+
+        std::printf("%d\n", route[0]);
+
+        free(route);
+    }
+
+    free(dist);
+    free(parent);
+
+    return minDist;
     
 }
 
@@ -101,17 +136,20 @@ int main(int argc, char *argv[]) {
 
     double avgTime = 0.0;
     int minDist = 0;
+    bool printRoute = false;
 
     for (int i = 0; i < ITER_NUM; i++){
         double startTime = CycleTimer::currentSeconds();
-        minDist = BellmanFord(edges, srcNode, dstNode, numNodes, numEdges*2);
+        minDist = BellmanFord(edges, srcNode, dstNode, numNodes, numEdges*2, printRoute);
         double endTime = CycleTimer::currentSeconds();
         avgTime += endTime - startTime;
     }
     
     avgTime /= ITER_NUM;
 
+    printRoute = true;
     std::printf("[BellmanFord Serial]:\t\t[%lf] ms\n", avgTime * 1000);
+    minDist = BellmanFord(edges, srcNode, dstNode, numNodes, numEdges*2, printRoute);
     std::printf("The minimum distance from %d to %d is: %d\n", srcNode, dstNode, minDist);
     
     return 0;
