@@ -7,6 +7,7 @@
 #include <cuda.h>
 
 #define INF 1e9
+#define ITER_NUM 10
 
 struct Edge{
     int src;
@@ -123,11 +124,20 @@ int main(int argc, char *argv[]) {
     std::printf("Successfully construct Edge vector\n");
     ifs.close();
 
-    double startTime = CycleTimer::currentSeconds();
-    int minDist = BellmanFord(edges, srcNode, dstNode, numNodes, numEdges*2);
-    double endTime = CycleTimer::currentSeconds();
+    double avgTime = 0.0;
+    int minDist = 0;
 
-    std::printf("[BellmanFord cuda]:\t\t[%lf] ms\n", (endTime - startTime) * 1000);
+    for (int i = 0; i < ITER_NUM; i++){
+        double startTime = CycleTimer::currentSeconds();
+        minDist = BellmanFord(edges, srcNode, dstNode, numNodes, numEdges*2);
+        double endTime = CycleTimer::currentSeconds();
+
+        avgTime += endTime - startTime;
+    }
+
+    avgTime /= ITER_NUM;
+
+    std::printf("[BellmanFord cuda]:\t\t[%lf] ms\n", avgTime * 1000);
     std::printf("The minimum distance from %d to %d is: %d\n", srcNode, dstNode, minDist);
     
     return 0;

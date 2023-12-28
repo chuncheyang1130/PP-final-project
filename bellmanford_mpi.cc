@@ -37,7 +37,7 @@ int BellmanFord(Edge* edges, int srcNode, int dstNode, int numNodes, int numEdge
     int start_ind = world_rank * edge_per_rank;
     int end_ind = start_ind + edge_per_rank > numEdges ? numEdges : start_ind + edge_per_rank;
 
-    std::printf("rank: %d, start_ind: %d, end_ind: %d\n", world_rank, start_ind, end_ind);
+    // std::printf("rank: %d, start_ind: %d, end_ind: %d\n", world_rank, start_ind, end_ind);
 
 
     while (N--) {
