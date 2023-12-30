@@ -15,7 +15,7 @@ struct Edge{
     int weight;
 };
 
-__global__ void BellmanFordKernel(Edge* edges, int* dist, int numNodes, int numEdges){
+__global__ void BellmanFordKernel(Edge* edges, int* dist, int* parent, int numNodes, int numEdges){
 
     int threadId = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -23,21 +23,30 @@ __global__ void BellmanFordKernel(Edge* edges, int* dist, int numNodes, int numE
         return;
 
     Edge edge = edges[threadId];
+    // printf("threadId: %d\n", threadId);
 
-    if (dist[edge.src] != INF/*  && dist[edge.src] + edge.weight < dist[edge.dst] */)
+    if (dist[edge.src] != INF && dist[edge.src] + edge.weight < dist[edge.dst]){
         atomicMin(&dist[edge.dst], dist[edge.src] + edge.weight);
+        
+        if(dist[edge.dst] == dist[edge.src] + edge.weight)
+            atomicExch(&parent[edge.dst], edge.src);
+    }
+
+    __syncthreads();
         
 }
 
-int BellmanFord(Edge* edges, int srcNode, int dstNode, int numNodes, int numEdges){
+int BellmanFord(Edge* edges, int srcNode, int dstNode, int numNodes, int numEdges, bool printRoute){
     Edge* deviceEdgeArray;
     cudaMalloc(&deviceEdgeArray, numEdges * sizeof(struct Edge));
     cudaMemcpy(deviceEdgeArray, edges, numEdges * sizeof(struct Edge), cudaMemcpyHostToDevice);
     
     int* dist = (int*)malloc(numNodes * sizeof(int));
+    int* parent = (int*)malloc(numNodes * sizeof(int));
     
     for (int i = 0; i < numNodes; i++){
         dist[i] = INF;
+        parent[i] = -1;
     }
 
     dist[srcNode] = 0;
@@ -45,16 +54,22 @@ int BellmanFord(Edge* edges, int srcNode, int dstNode, int numNodes, int numEdge
     int* deviceDistArray;
     cudaMalloc(&deviceDistArray, numNodes * sizeof(int));
     cudaMemcpy(deviceDistArray, dist, numNodes * sizeof(int), cudaMemcpyHostToDevice);
+
+    int* deviceParentArray;
+    cudaMalloc(&deviceParentArray, numNodes * sizeof(int));
+    cudaMemcpy(deviceParentArray, parent, numNodes * sizeof(int), cudaMemcpyHostToDevice);
     
     int N = numNodes - 1;
     int threadPerBlock = 64;
     int numBlocks = (numEdges + threadPerBlock - 1) / threadPerBlock;
 
     while(N--){
-        BellmanFordKernel<<<numBlocks, threadPerBlock>>>(deviceEdgeArray, deviceDistArray, numNodes, numEdges);
+        // printf("N=%d\n", N);
+        BellmanFordKernel<<<numBlocks, threadPerBlock>>>(deviceEdgeArray, deviceDistArray, deviceParentArray, numNodes, numEdges);
     }
 
     cudaMemcpy(dist, deviceDistArray, numNodes * sizeof(int), cudaMemcpyDeviceToHost);
+    cudaMemcpy(parent, deviceParentArray, numNodes * sizeof(int), cudaMemcpyDeviceToHost);
 
     for (int i = 0; i < numEdges; i++){
         Edge edge = edges[i];
@@ -66,9 +81,39 @@ int BellmanFord(Edge* edges, int srcNode, int dstNode, int numNodes, int numEdge
 
     cudaFree(deviceEdgeArray);
     cudaFree(deviceDistArray);
+    cudaFree(deviceParentArray);
     
     int min_dist = dist[dstNode];
+
     free(dist);
+
+    if (printRoute){
+        int* route = (int*)malloc(numNodes * sizeof(int));
+        int numRouteNodes = 1;
+        route[0] = dstNode;
+
+        int curNode = dstNode;
+
+        // printf("Barrier\n");
+        
+        while(curNode != srcNode){
+            route[numRouteNodes] = parent[curNode];
+            curNode = parent[curNode];
+            numRouteNodes++;
+        }
+
+        std::printf("The shortest path is:\n");
+    
+        for (int i = numRouteNodes-1; i >= 1; i--){
+            std::printf("%d -> ", route[i]);
+        }
+
+        std::printf("%d\n", route[0]);
+
+        free(route);
+    }
+
+    free(parent);
 
     return min_dist;
     
@@ -121,15 +166,16 @@ int main(int argc, char *argv[]) {
         // edges.push_back(e2);
     }
 
-    std::printf("Successfully construct Edge vector\n");
+    // std::printf("Successfully construct Edge vector\n");
     ifs.close();
 
     double avgTime = 0.0;
     int minDist = 0;
+    bool printRoute = false;
 
     for (int i = 0; i < ITER_NUM; i++){
         double startTime = CycleTimer::currentSeconds();
-        minDist = BellmanFord(edges, srcNode, dstNode, numNodes, numEdges*2);
+        minDist = BellmanFord(edges, srcNode, dstNode, numNodes, numEdges*2, printRoute);
         double endTime = CycleTimer::currentSeconds();
 
         avgTime += endTime - startTime;
@@ -137,7 +183,9 @@ int main(int argc, char *argv[]) {
 
     avgTime /= ITER_NUM;
 
+    printRoute = true;
     std::printf("[BellmanFord cuda]:\t\t[%lf] ms\n", avgTime * 1000);
+    minDist = BellmanFord(edges, srcNode, dstNode, numNodes, numEdges*2, printRoute);
     std::printf("The minimum distance from %d to %d is: %d\n\n", srcNode, dstNode, minDist);
     
     return 0;
