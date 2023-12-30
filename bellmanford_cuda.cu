@@ -27,9 +27,12 @@ __global__ void BellmanFordKernel(Edge* edges, int* dist, int* parent, int numNo
 
     if (dist[edge.src] != INF && dist[edge.src] + edge.weight < dist[edge.dst]){
         atomicMin(&dist[edge.dst], dist[edge.src] + edge.weight);
-
-        int oldParent = atomicCAS(&parent[edge.dst], parent[edge.dst], edge.src);
+        
+        if(dist[edge.dst] == dist[edge.src] + edge.weight)
+            atomicExch(&parent[edge.dst], edge.src);
     }
+
+    __syncthreads();
         
 }
 
@@ -61,10 +64,12 @@ int BellmanFord(Edge* edges, int srcNode, int dstNode, int numNodes, int numEdge
     int numBlocks = (numEdges + threadPerBlock - 1) / threadPerBlock;
 
     while(N--){
+        // printf("N=%d\n", N);
         BellmanFordKernel<<<numBlocks, threadPerBlock>>>(deviceEdgeArray, deviceDistArray, deviceParentArray, numNodes, numEdges);
     }
 
     cudaMemcpy(dist, deviceDistArray, numNodes * sizeof(int), cudaMemcpyDeviceToHost);
+    cudaMemcpy(parent, deviceParentArray, numNodes * sizeof(int), cudaMemcpyDeviceToHost);
 
     for (int i = 0; i < numEdges; i++){
         Edge edge = edges[i];
@@ -76,8 +81,10 @@ int BellmanFord(Edge* edges, int srcNode, int dstNode, int numNodes, int numEdge
 
     cudaFree(deviceEdgeArray);
     cudaFree(deviceDistArray);
+    cudaFree(deviceParentArray);
     
     int min_dist = dist[dstNode];
+
     free(dist);
 
     if (printRoute){
@@ -86,6 +93,8 @@ int BellmanFord(Edge* edges, int srcNode, int dstNode, int numNodes, int numEdge
         route[0] = dstNode;
 
         int curNode = dstNode;
+
+        // printf("Barrier\n");
         
         while(curNode != srcNode){
             route[numRouteNodes] = parent[curNode];
@@ -103,6 +112,8 @@ int BellmanFord(Edge* edges, int srcNode, int dstNode, int numNodes, int numEdge
 
         free(route);
     }
+
+    free(parent);
 
     return min_dist;
     
@@ -155,7 +166,7 @@ int main(int argc, char *argv[]) {
         // edges.push_back(e2);
     }
 
-    std::printf("Successfully construct Edge vector\n");
+    // std::printf("Successfully construct Edge vector\n");
     ifs.close();
 
     double avgTime = 0.0;
