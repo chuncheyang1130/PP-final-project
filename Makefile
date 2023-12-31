@@ -1,7 +1,7 @@
 CXX = g++
 CFLAGS = -O2 -std=c++17 -g -Wall
 NVCC = nvcc
-NVFLAGS = -O2 -Xcompiler -lrt -lm
+NVFLAGS = -O3 -Xcompiler -lrt -lm
 MPICC = mpicxx
 .PHONY: all clean
 

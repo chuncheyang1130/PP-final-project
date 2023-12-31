@@ -6,6 +6,8 @@
 #include "omp.h"
 #include "CycleTimer.h"
 
+#define ITER_NUM 10
+
 int minimumDistance(std::vector<int> dist, std::vector<bool> visited) {
     int min = INT_MAX, min_index = 0;
     #pragma omp parallel 
@@ -78,7 +80,7 @@ int main(int argc, char *argv[]) {
     
     int numNodes, numEdges;
     ifs >> numNodes >> numEdges;
-    std::printf("[numNode]: %d [numEdges]: %d\n", numNodes, numEdges);
+    std::printf("[numNodes]: %d [numEdges]: %d\n", numNodes, numEdges);
     std::vector<std::vector<int>> adjMatrix(numNodes, std::vector<int>(numNodes, 0));
     
     int srcNode = std::atoi(argv[2]);
@@ -99,11 +101,17 @@ int main(int argc, char *argv[]) {
     std::printf("Successfully construct adjacency matrix\n");
     ifs.close();
 
-    double startTime = CycleTimer::currentSeconds();
-    int minDist = dijkstra(adjMatrix, srcNode, dstNode, numNodes);
-    double endTime = CycleTimer::currentSeconds();
+    double avgTime = 0.0f;
+    int minDist;
+    for (int i = 0; i < ITER_NUM; i++) {
+        double startTime = CycleTimer::currentSeconds();
+        minDist = dijkstra(adjMatrix, srcNode, dstNode, numNodes);
+        double endTime = CycleTimer::currentSeconds();
+        avgTime += (endTime - startTime);
+    }
+    avgTime /= ITER_NUM;
 
-    std::printf("[Dijkstra Thread]:\t\t[%lf] ms\n", (endTime - startTime) * 1000);
+    std::printf("[Dijkstra Thread]:\t\t[%lf] ms\n", avgTime * 1000);
     std::printf("The minimum distance from %d to %d is: %d\n", srcNode, dstNode, minDist);
 
     return 0;

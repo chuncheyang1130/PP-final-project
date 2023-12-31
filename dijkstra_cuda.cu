@@ -4,12 +4,12 @@
 #include <fstream>
 #include <iostream>
 #include "CycleTimer.h"
-
+#define ITER_NUM 10
 
 int minimumDistance(int *dist, bool *visited, int numNodes) {
     int min = INT_MAX, min_index = 0;
     for (int v = 0; v < numNodes; v++) {
-        if (!visited[v] && dist[v] <= min) {
+        if (!visited[v] && dist[v] < min) {
             min = dist[v];
             min_index = v;
         }
@@ -41,7 +41,7 @@ int main(int argc, char *argv[]) {
     }    
     int numNodes, numEdges;
     ifs >> numNodes >> numEdges;
-    std::printf("[numNode]: %d [numEdges]: %d\n", numNodes, numEdges);
+    std::printf("[numNodes]: %d [numEdges]: %d\n", numNodes, numEdges);
     int* adjMatrix = (int *)calloc(numNodes * numNodes, sizeof(int));
     
     int srcNode = std::atoi(argv[2]);
@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
     cudaMemcpy(deviceDist, dist, numNodes * sizeof(int), cudaMemcpyHostToDevice);
     cudaMemcpy(deviceVisited, visited, numNodes * sizeof(int), cudaMemcpyHostToDevice);
 
-    dim3 threadsPerBlockRelax(256, 1);
+    dim3 threadsPerBlockRelax(1024, 1);
     dim3 numBlockRelax(numNodes / threadsPerBlockRelax.x, 1);
 
     cudaEventRecord(startEvent);
