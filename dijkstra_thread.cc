@@ -36,14 +36,16 @@ int minimumDistance(std::vector<int> dist, std::vector<bool> visited) {
     return min_index;
 }
 
-int dijkstra(std::vector<std::vector<int>> adjMatrix, int srcNode, int dstNode, int numNodes) {
+int dijkstra(std::vector<std::vector<int>> adjMatrix, int srcNode, int dstNode, int numNodes, bool printRoute) {
     std::vector<int> dist(numNodes);
     std::vector<bool> visited(numNodes);
+    std::vector<int> parent(numNodes);
 
     #pragma omp parallel for 
     for (int i = 0; i < numNodes; i++) {
         dist[i] = INT_MAX;
         visited[i] = false;
+        parent[i] = -1;
     }
 
     dist[srcNode] = 0;
@@ -57,13 +59,39 @@ int dijkstra(std::vector<std::vector<int>> adjMatrix, int srcNode, int dstNode, 
         {
             #pragma omp for 
             for (int v = 0; v < numNodes; v++) {
-                if (!visited[v] && adjMatrix[u][v] && dist[u] + adjMatrix[u][v] < dist[v])
-                    dist[v] = dist[u] + adjMatrix[u][v];;
+                if (!visited[v] && adjMatrix[u][v] && dist[u] + adjMatrix[u][v] < dist[v]) {
+                    dist[v] = dist[u] + adjMatrix[u][v];
+                    parent[v] =  u;
+                }
             }
         }
         
     }
-    return dist[dstNode];
+    int minDist = dist[dstNode];
+    
+    if (printRoute) {
+        std::vector<int> route(numNodes);
+        int numRouteNodes = 1;
+        route[0] = dstNode;
+        
+        int curNode = dstNode;
+        
+        while(curNode != srcNode) {
+            route[numRouteNodes] = parent[curNode];
+            curNode = parent[curNode];
+            numRouteNodes++;
+        }
+
+        std::printf("The shortest path is:\n");
+    
+        for (int i = numRouteNodes-1; i >= 1; i--){
+            std::printf("%d -> ", route[i]);
+        }
+
+        std::printf("%d\n", route[0]);
+    }
+
+    return minDist;
 }
 
 int main(int argc, char *argv[]) {
@@ -103,15 +131,18 @@ int main(int argc, char *argv[]) {
 
     double avgTime = 0.0f;
     int minDist;
+    bool printRoute = false;
     for (int i = 0; i < ITER_NUM; i++) {
         double startTime = CycleTimer::currentSeconds();
-        minDist = dijkstra(adjMatrix, srcNode, dstNode, numNodes);
+        minDist = dijkstra(adjMatrix, srcNode, dstNode, numNodes, printRoute);
         double endTime = CycleTimer::currentSeconds();
         avgTime += (endTime - startTime);
     }
     avgTime /= ITER_NUM;
 
+    printRoute = true;
     std::printf("[Dijkstra Thread]:\t\t[%lf] ms\n", avgTime * 1000);
+    minDist = dijkstra(adjMatrix, srcNode, dstNode, numNodes, printRoute);
     std::printf("The minimum distance from %d to %d is: %d\n", srcNode, dstNode, minDist);
 
     return 0;
