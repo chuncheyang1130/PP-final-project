@@ -7,10 +7,11 @@ import random
 import matplotlib.pyplot as plt
 
 ## MODIFY THIS
-topo_file_name = './topo_txts/topo_100.txt'
+NODE_NUM=100
 ## END
 
-topo_node_num = int(topo_file_name.split('_')[2].split('.')[0])
+topo_file_name = f'./topo_txts/topo_{NODE_NUM}.txt'
+topo_node_num = int(NODE_NUM)
 host_node_map = {
         20 : 0, 
         100 : 1, 
