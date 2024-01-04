@@ -1,6 +1,6 @@
 # PP-final-project
 
-### How to use random graph generator in tools/graph.py
+## How to use random graph generator in tools/graph.py
 
 ```
 python3 ./tools/graph.py --algo [Dijkstra | BellmanFord] -n NodeNum -e EdgeNum -d Distance > output.txt 
@@ -32,3 +32,7 @@ The output format for ```tools/general_graph.py``` is like `NodeNum EdgeNum` and
 
 99 35 5
 ```
+
+## SDN Codes
+- Env: Mininet v2.3.1b4 (latest) + Ryu v4.34
+- Source codes and README.md are in ./SDN
