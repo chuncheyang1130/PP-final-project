@@ -1,6 +1,16 @@
 # SDN Codes
 - Env: Mininet v2.3.1b4 (latest) + Ryu v4.34
-
+  - Installation
+  ```
+  sudo apt-get update && sudo apt-get install mininet python3-pip
+  sudo pip3 install ryu
+  ``` 
+  - Test for installation
+    - Should display version of both applications
+  ```
+  mn --version
+  ryu-manager --version
+  ```
 ## Execution
 ### Generate Mininet topo's Python script and the topo's graph with desired node number:
 - Edit generate_mininet_topo.py
